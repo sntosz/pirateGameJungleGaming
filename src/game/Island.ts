@@ -39,11 +39,11 @@ export class Island {
     const g = new Graphics();
     g.fill({ color: 0xd4a373 });
     const localPts = this.polygon.points.map(p => ({ x: p.x - this.x, y: p.y - this.y }));
-    g.drawPolygon(localPts.flatMap(p => [p.x, p.y]));
+    g.poly(localPts.flatMap(p => [p.x, p.y]));
 
     g.fill({ color: 0x2a9d8f });
     const innerPts = localPts.map(p => ({ x: p.x * 0.75, y: p.y * 0.75 }));
-    g.drawPolygon(innerPts.flatMap(p => [p.x, p.y]));
+    g.poly(innerPts.flatMap(p => [p.x, p.y]));
 
     this.container.addChild(g);
 

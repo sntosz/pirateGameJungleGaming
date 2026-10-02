@@ -24,7 +24,7 @@ export class HealthBar {
   private renderBg(): void {
     this.bgGraphics.clear();
     this.bgGraphics.fill({ color: 0x000000, alpha: 0.7 });
-    this.bgGraphics.drawRect(-this.width / 2 - 1, -this.height / 2 - 1, this.width + 2, this.height + 2);
+    this.bgGraphics.rect(-this.width / 2 - 1, -this.height / 2 - 1, this.width + 2, this.height + 2);
   }
 
   public update(currentHp: number, maxHp: number, isPlayer: boolean = false): void {
@@ -47,7 +47,7 @@ export class HealthBar {
 
     const fillW = this.width * ratio;
     this.fillGraphics.fill({ color });
-    this.fillGraphics.drawRect(-this.width / 2, -this.height / 2, fillW, this.height);
+    this.fillGraphics.rect(-this.width / 2, -this.height / 2, fillW, this.height);
   }
 
   public destroy(): void {

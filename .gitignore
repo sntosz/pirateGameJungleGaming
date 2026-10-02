@@ -1,9 +1,12 @@
 node_modules
 dist
+public/assets
 dev.log
 vite.log
 vite_server.log
 capture.mjs
+capture_game.mjs
+debug_game.mjs
 verification.png
 test-results
 playwright-report
