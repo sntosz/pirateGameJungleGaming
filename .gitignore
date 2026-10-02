@@ -1,0 +1,11 @@
+node_modules
+dist
+dev.log
+vite.log
+vite_server.log
+capture.mjs
+verification.png
+test-results
+playwright-report
+blob-report
+.vite
