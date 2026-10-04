@@ -95,7 +95,7 @@ export const MainMenu: React.FC<MainMenuProps> = ({
               backgroundImage: `url('/assets/png/default/ui/menu/panel_menu.png')`,
               backgroundSize: '100% 100%',
               backgroundRepeat: 'no-repeat',
-              padding: activeTab === 'CONTROLS' ? '56px 38px 58px' : '48px clamp(24px, 7.5vw, 112px) 34px',
+              padding: activeTab === 'CONTROLS' ? '56px 38px 58px' : '48px 112px 34px',
               overflow: 'hidden',
             }}
           >
@@ -321,7 +321,7 @@ export const MainMenu: React.FC<MainMenuProps> = ({
         className="absolute bottom-5 right-8 z-20 w-20 object-contain sm:w-36"
       />
 
-      <div className="absolute left-3 top-3 z-20 flex items-center gap-2 rounded-md bg-black/60 px-3 py-2 backdrop-blur-sm">
+      <div className="absolute left-3 bottom-3 z-20 flex items-center gap-2 rounded-md bg-black/60 px-3 py-2 backdrop-blur-sm">
         <label htmlFor="msw-scenario" className="text-[10px] font-bold uppercase tracking-wide text-[#f1d8a0]">
           Network
         </label>

@@ -51,7 +51,7 @@ export class Island {
     const localPts = this.polygon.points.map(p => ({ x: p.x - this.x, y: p.y - this.y }));
     const polygonCoords = localPts.flatMap(p => [p.x, p.y]);
 
-    if (this.variant >= 4) {
+    if (this.variant === 4) {
       const reefShadow = new Graphics()
         .ellipse(0, 7, this.radius * 1.1, this.radius * 0.7)
         .fill({ color: 0x062b3b, alpha: 0.3 });

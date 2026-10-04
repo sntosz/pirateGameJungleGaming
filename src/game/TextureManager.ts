@@ -39,6 +39,8 @@ export class TextureManager {
       { key: 'crew_4', url: '/assets/png/default/ship_parts/crew_4.png' },
       { key: 'island_1', url: '/assets/png/default/tiles/tile_23.png' },
       { key: 'island_2', url: '/assets/png/default/tiles/tile_74.png' },
+      { key: 'stone_arch', url: '/assets/png/default/tiles/tile_63.png' },
+      { key: 'palm_tree', url: '/assets/png/default/tiles/tile_70.png' },
       { key: 'fire_effect', url: '/assets/png/default/effects/fire_1.png' },
       { key: 'damage_smoke', url: '/assets/png/default/effects/fire_2.png' },
       { key: 'explosion_effect', url: '/assets/png/default/effects/explosion_1.png' },

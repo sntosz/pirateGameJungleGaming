@@ -177,17 +177,25 @@ export class GameEngine {
   }
 
   private setupIslands(): void {
+    // Hand-crafted archipelago: a fortified island (NW), an island chain
+    // forming a channel on the east, southern reefs and scattered islets.
     const islandLayout = [
-      { x: 200, y: 166, radius: 148 },
-      { x: 1052, y: 174, radius: 136 },
-      { x: 224, y: 555, radius: 128 },
-      { x: 1046, y: 544, radius: 150 },
-      { x: 642, y: 190, radius: 26 },
-      { x: 660, y: 536, radius: 30 },
+      { x: 255, y: 170, radius: 160, v: 5 },  // Fort island
+      { x: 445, y: 110, radius: 48, v: 1 },   // Fort satellite islets
+      { x: 140, y: 315, radius: 42, v: 2 },
+      { x: 1080, y: 125, radius: 72, v: 0 },  // Eastern island chain (NE → SE arc)
+      { x: 1162, y: 252, radius: 50, v: 3 },
+      { x: 1135, y: 385, radius: 62, v: 1 },
+      { x: 1050, y: 512, radius: 46, v: 2 },
+      { x: 250, y: 565, radius: 118, v: 3 },  // Southern island
+      { x: 430, y: 625, radius: 52, v: 0 },
+      { x: 660, y: 175, radius: 28, v: 4 },   // Reef rocks (navigational hazards)
+      { x: 620, y: 555, radius: 32, v: 4 },
+      { x: 750, y: 600, radius: 24, v: 4 },
     ];
 
-    this.islands = islandLayout.map(({ x, y, radius }, variant) =>
-      new Island(x, y, radius, undefined, variant)
+    this.islands = islandLayout.map(({ x, y, radius, v }) =>
+      new Island(x, y, radius, undefined, v)
     );
     this.islands.forEach(island => this.gameLayer.addChild(island.container));
   }
