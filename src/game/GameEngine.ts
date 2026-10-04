@@ -312,15 +312,20 @@ export class GameEngine {
     );
   }
 
+  private timeWarningPlayed: boolean = false;
+  private healthWarningPlayed: boolean = false;
+
   public pause(): void {
     this.isPaused = true;
     this.inputState.thrust = 0;
     this.inputState.turn = 0;
     SoundManager.getInstance().updateSailingSound(false);
+    SoundManager.getInstance().play('game_pause', 0.7);
   }
 
   public resume(): void {
     this.isPaused = false;
+    SoundManager.getInstance().play('game_resume', 0.7);
   }
 
   private update(): void {
@@ -334,6 +339,19 @@ export class GameEngine {
     if (this.timeRemaining <= 0) {
       this.endGame('TIME_EXPIRED');
       return;
+    }
+
+    if (this.timeRemaining <= 10 && !this.timeWarningPlayed) {
+      this.timeWarningPlayed = true;
+      SoundManager.getInstance().play('time_warning');
+    }
+
+    const hpRatio = this.player.currentHealth / this.player.maxHealth;
+    if (hpRatio <= 0.3 && !this.healthWarningPlayed) {
+      this.healthWarningPlayed = true;
+      SoundManager.getInstance().play('health_low');
+    } else if (hpRatio > 0.3) {
+      this.healthWarningPlayed = false;
     }
 
     const islandPolys = this.islands.map((i) => i.polygon);
@@ -485,6 +503,7 @@ export class GameEngine {
     SoundManager.getInstance().updateSailingSound(false);
 
     if (endReason === 'PLAYER_DIED') {
+      SoundManager.getInstance().play('ship_sinking');
       SoundManager.getInstance().play('game_over');
     } else {
       SoundManager.getInstance().play('game_complete');

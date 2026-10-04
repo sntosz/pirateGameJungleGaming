@@ -5,6 +5,9 @@ import { MatchHistoryTab } from './MatchHistoryTab';
 import { RankingEntry, MatchResult, PaginatedResponse } from '../types/game';
 import { useFitScale } from '../hooks/useFitScale';
 import { MSW_SCENARIOS, resetMswDatabase } from '../mocks/handlers';
+import { SoundManager } from '../game/SoundManager';
+
+const playUi = (id: string, vol = 0.5) => SoundManager.getInstance().play(id, vol);
 
 interface MainMenuProps {
   playerName: string;
@@ -114,6 +117,7 @@ export const MainMenu: React.FC<MainMenuProps> = ({
             <div className="flex flex-col items-center gap-2 pt-4">
               <button
                 onClick={onStartGame}
+                onMouseEnter={() => playUi('ui_hover', 0.3)}
                 data-testid="btn-play"
                 className="flex items-center justify-center gap-2 border-0 bg-transparent px-4 text-[17px] font-black uppercase tracking-[0.12em] text-[#1d2d41] shadow-none"
                 style={{
@@ -129,6 +133,7 @@ export const MainMenu: React.FC<MainMenuProps> = ({
 
               <button
                 onClick={onOpenOptions}
+                onMouseEnter={() => playUi('ui_hover', 0.3)}
                 data-testid="btn-options"
                 className="flex items-center justify-center gap-2 border-0 bg-transparent px-4 text-[17px] font-black uppercase tracking-[0.12em] text-[#1d2d41] shadow-none"
                 style={{
@@ -169,7 +174,11 @@ export const MainMenu: React.FC<MainMenuProps> = ({
 
             <div className="flex items-center justify-center gap-3 pt-3">
               <button
-                onClick={() => setActiveTab('RANKING')}
+                onClick={() => {
+                  playUi('ui_click');
+                  setActiveTab('RANKING');
+                }}
+                onMouseEnter={() => playUi('ui_hover', 0.3)}
                 data-testid="tab-btn-ranking"
                 className="border-0 bg-transparent px-4 text-[11px] font-black uppercase tracking-[0.12em] text-[#f1d8a0]"
                 style={{
@@ -184,7 +193,11 @@ export const MainMenu: React.FC<MainMenuProps> = ({
               </button>
 
               <button
-                onClick={() => setActiveTab('HISTORY')}
+                onClick={() => {
+                  playUi('ui_click');
+                  setActiveTab('HISTORY');
+                }}
+                onMouseEnter={() => playUi('ui_hover', 0.3)}
                 data-testid="tab-btn-history"
                 className="border-0 bg-transparent px-4 text-[11px] font-black uppercase tracking-[0.12em] text-[#f1d8a0]"
                 style={{
@@ -207,7 +220,10 @@ export const MainMenu: React.FC<MainMenuProps> = ({
 
                 <div className="mb-4 flex flex-wrap justify-center gap-3">
                   <button
-                    onClick={() => setActiveTab('RANKING')}
+                    onClick={() => {
+                      playUi('ui_click');
+                      setActiveTab('RANKING');
+                    }}
                     aria-pressed={activeTab === 'RANKING'}
                     data-testid="tab-btn-ranking"
                     className={`border-0 bg-transparent px-4 text-xs font-black uppercase tracking-wide ${
@@ -224,7 +240,10 @@ export const MainMenu: React.FC<MainMenuProps> = ({
                     Ranking
                   </button>
                   <button
-                    onClick={() => setActiveTab('HISTORY')}
+                    onClick={() => {
+                      playUi('ui_click');
+                      setActiveTab('HISTORY');
+                    }}
                     aria-pressed={activeTab === 'HISTORY'}
                     data-testid="tab-btn-history"
                     className={`border-0 bg-transparent px-4 text-xs font-black uppercase tracking-wide ${
@@ -273,7 +292,10 @@ export const MainMenu: React.FC<MainMenuProps> = ({
 
                 <div className="mt-auto mb-5 flex justify-center pt-5">
                   <button
-                    onClick={() => setActiveTab('CONTROLS')}
+                    onClick={() => {
+                      playUi('ui_back');
+                      setActiveTab('CONTROLS');
+                    }}
                     data-testid="btn-main-menu"
                     className="border-0 bg-transparent px-5 text-sm font-black uppercase tracking-wide text-[#1d2d41]"
                     style={{

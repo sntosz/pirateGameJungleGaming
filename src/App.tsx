@@ -21,6 +21,9 @@ import { PauseModal } from './components/PauseModal';
 import { ResultScreen } from './components/ResultScreen';
 import { RotateOverlay } from './components/RotateOverlay';
 import { GameEngine } from './game/GameEngine';
+import { SoundManager } from './game/SoundManager';
+
+const playUi = (id: string) => SoundManager.getInstance().play(id, 0.6);
 
 const lockLandscapeOrientation = async () => {
   try {
@@ -86,6 +89,7 @@ export const App: React.FC = () => {
   };
 
   const handleStartGame = () => {
+    playUi('ui_click');
     lockLandscapeOrientation();
     setSession(s => s + 1);
     setGameState('PLAYING');
@@ -118,6 +122,7 @@ export const App: React.FC = () => {
   };
 
   const handleAbandonMatch = () => {
+    playUi('ui_back');
     if (engineRef.current) {
       engineRef.current.destroy();
       engineRef.current = null;
@@ -183,7 +188,10 @@ export const App: React.FC = () => {
           sessionTime={config.sessionTime}
           enemySpawnInterval={config.enemySpawnInterval}
           onStartGame={handleStartGame}
-          onOpenOptions={() => setGameState('PAUSED')}
+          onOpenOptions={() => {
+            playUi('ui_open');
+            setGameState('PAUSED');
+          }}
           rankingData={rankingQuery.data}
           rankingLoading={rankingQuery.isLoading}
           rankingError={rankingQuery.isError}
@@ -208,7 +216,10 @@ export const App: React.FC = () => {
           config={config}
           playerName={playerName}
           onSave={handleSaveOptions}
-          onBack={() => setGameState('MENU')}
+          onBack={() => {
+            playUi('ui_back');
+            setGameState('MENU');
+          }}
         />
       )}
 
@@ -263,7 +274,10 @@ export const App: React.FC = () => {
             <PauseModal
               onResume={handleResume}
               onAbandon={handleAbandonMatch}
-              onOptions={() => setShowPauseOptions(true)}
+              onOptions={() => {
+                playUi('ui_open');
+                setShowPauseOptions(true);
+              }}
             />
           )}
 
@@ -272,7 +286,10 @@ export const App: React.FC = () => {
               config={config}
               playerName={playerName}
               onSave={handleSaveOptions}
-              onBack={() => setShowPauseOptions(false)}
+              onBack={() => {
+                playUi('ui_close');
+                setShowPauseOptions(false);
+              }}
             />
           )}
         </div>
@@ -282,11 +299,13 @@ export const App: React.FC = () => {
         <ResultScreen
           result={lastResult}
           onPlayAgain={() => {
+            playUi('ui_click');
             engineRef.current = null;
             setSession(s => s + 1);
             setGameState('PLAYING');
           }}
           onMainMenu={() => {
+            playUi('ui_back');
             engineRef.current = null;
             setGameState('MENU');
           }}
