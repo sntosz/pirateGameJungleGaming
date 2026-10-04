@@ -1,5 +1,5 @@
 import React from 'react';
-import { Pause, Shield, Flame, Crosshair } from 'lucide-react';
+import { useFitScale } from '../hooks/useFitScale';
 
 interface HUDProps {
   score: number;
@@ -19,24 +19,30 @@ export const HUD: React.FC<HUDProps> = ({
   playerHp,
   playerMaxHp,
   timeRemaining,
-  frontCooldown,
-  frontMaxCooldown,
-  leftCooldown,
-  rightCooldown,
-  broadsideMaxCooldown,
   onPause,
 }) => {
   const hpPercent = Math.max(0, Math.min(100, Math.round((playerHp / playerMaxHp) * 100)));
+  const scale = useFitScale(700, 90);
 
-  const frontProgress = Math.max(0, Math.min(100, 100 - (frontCooldown / frontMaxCooldown) * 100));
-  const leftProgress = Math.max(0, Math.min(100, 100 - (leftCooldown / broadsideMaxCooldown) * 100));
-  const rightProgress = Math.max(0, Math.min(100, 100 - (rightCooldown / broadsideMaxCooldown) * 100));
+  const fillClass =
+    hpPercent > 50
+      ? 'bg-gradient-to-b from-[#7ed957] to-[#3d9b2f]'
+      : hpPercent > 25
+        ? 'bg-gradient-to-b from-[#f7c85f] to-[#d89736]'
+        : 'bg-gradient-to-b from-[#e0655a] to-[#a83228]';
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
     return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
   };
+
+  const counterPanelStyle = {
+    backgroundImage: `url('/assets/png/default/ui/hud/counter_panel.png')`,
+    backgroundSize: '100% 100%',
+    backgroundRepeat: 'no-repeat',
+    height: 52,
+  } as const;
 
   return (
     <div
@@ -45,88 +51,86 @@ export const HUD: React.FC<HUDProps> = ({
       role="region"
     >
       <div className="flex items-start justify-between w-full">
-        <div className="pointer-events-auto bg-gray-900/80 backdrop-blur border border-pirate-gold/40 rounded-xl p-3 shadow-lg flex items-center gap-3 w-64">
-          <Shield className="w-7 h-7 text-emerald-400 shrink-0" />
-          <div className="w-full">
-            <div className="flex justify-between text-xs font-bold text-gray-200 mb-1">
-              <span>HEALTH</span>
-              <span>{hpPercent}%</span>
-            </div>
-            <div className="w-full bg-gray-700 h-3 rounded-full overflow-hidden border border-gray-600">
+        <div
+          className="pointer-events-auto flex items-center gap-1.5"
+          style={{ transform: `scale(${scale})`, transformOrigin: 'top left' }}
+        >
+          <img
+            src="/assets/png/default/ui/hud/icon_heart.png"
+            alt="Health"
+            className="w-9 h-9 object-contain drop-shadow-md"
+          />
+          <div
+            className="relative flex items-center"
+            style={{
+              backgroundImage: `url('/assets/png/default/ui/hud/health_frame.png')`,
+              backgroundSize: '100% 100%',
+              backgroundRepeat: 'no-repeat',
+              width: 240,
+              height: 44,
+            }}
+          >
+            <div className="absolute left-[11.3%] right-[11.3%] top-1/2 -translate-y-1/2 h-[52%] overflow-hidden rounded-full">
               <div
-                className={`h-full transition-all duration-200 ${
-                  hpPercent > 50 ? 'bg-emerald-500' : hpPercent > 25 ? 'bg-amber-500' : 'bg-red-500'
-                }`}
+                className={`h-full rounded-full transition-all duration-200 ${fillClass}`}
                 style={{ width: `${hpPercent}%` }}
               />
             </div>
+            <span className="absolute inset-0 flex items-center justify-center text-[13px] font-black text-[#f7dfaa] drop-shadow-[0_1px_1px_rgba(0,0,0,0.8)]">
+              {Math.max(0, playerHp)}/{playerMaxHp}
+            </span>
           </div>
         </div>
 
-        <div className="pointer-events-auto bg-gray-900/80 backdrop-blur border border-pirate-gold/40 rounded-xl px-6 py-2 shadow-lg flex items-center gap-6">
-          <div className="text-center">
-            <div className="text-xs text-pirate-gold uppercase tracking-wider font-semibold">Score</div>
-            <div className="text-2xl font-black text-white" data-testid="hud-score">
+        <div
+          className="pointer-events-auto flex items-center gap-2.5"
+          style={{ transform: `scale(${scale})`, transformOrigin: 'top right' }}
+        >
+          <div
+            className="flex items-center justify-center gap-2 px-5"
+            style={{ ...counterPanelStyle, minWidth: 120 }}
+          >
+            <img src="/assets/png/default/ui/hud/icon_score.png" alt="Score" className="w-6 h-6 object-contain" />
+            <span className="text-xl font-black text-[#f7dfaa] drop-shadow-[0_1px_1px_rgba(0,0,0,0.8)]" data-testid="hud-score">
               {score}
-            </div>
+            </span>
           </div>
-          <div className="h-8 w-px bg-gray-700" />
-          <div className="text-center">
-            <div className="text-xs text-pirate-gold uppercase tracking-wider font-semibold">Time Remaining</div>
-            <div
-              className={`text-2xl font-black ${timeRemaining <= 10 ? 'text-red-400 animate-pulse' : 'text-white'}`}
+
+          <div
+            className="flex items-center justify-center gap-2 px-5"
+            style={{ ...counterPanelStyle, minWidth: 140 }}
+          >
+            <img src="/assets/png/default/ui/hud/icon_time.png" alt="Time" className="w-6 h-6 object-contain" />
+            <span
+              className={`text-xl font-black drop-shadow-[0_1px_1px_rgba(0,0,0,0.8)] ${
+                timeRemaining <= 10 ? 'text-red-400 animate-pulse' : 'text-[#f7dfaa]'
+              }`}
               data-testid="hud-timer"
             >
               {formatTime(timeRemaining)}
-            </div>
+            </span>
           </div>
-        </div>
 
-        <button
-          onClick={onPause}
-          className="pointer-events-auto bg-gray-900/80 hover:bg-gray-800 backdrop-blur border border-pirate-gold/40 p-3 rounded-xl shadow-lg transition-colors text-pirate-gold hover:text-white focus:outline-none focus:ring-2 focus:ring-pirate-gold"
-          aria-label="Pause Game"
-          data-testid="btn-pause"
-        >
-          <Pause className="w-6 h-6" />
-        </button>
+          <button
+            onClick={onPause}
+            className="flex items-center justify-center border-0 bg-transparent p-0 transition-transform hover:scale-105 focus:outline-none"
+            style={{
+              backgroundImage: `url('/assets/png/default/ui/controls/button_round_normal.png')`,
+              backgroundSize: '100% 100%',
+              backgroundRepeat: 'no-repeat',
+              width: 52,
+              height: 52,
+            }}
+            aria-label="Pause Game"
+            data-testid="btn-pause"
+          >
+            <img src="/assets/png/default/ui/controls/icon_pause.png" alt="Pause" className="w-6 h-6 object-contain" />
+          </button>
+        </div>
       </div>
 
-      <div className="flex justify-center w-full mb-2">
-        <div className="pointer-events-auto bg-gray-900/80 backdrop-blur border border-pirate-gold/40 rounded-xl px-4 py-2 shadow-lg flex items-center gap-6">
-          <div className="flex flex-col items-center gap-1">
-            <span className="text-[10px] text-gray-300 font-bold uppercase">Left Cannon [Q]</span>
-            <div className="relative w-12 h-12 rounded-lg bg-gray-800 border border-gray-600 flex items-center justify-center overflow-hidden">
-              <Crosshair className="w-6 h-6 text-amber-400 z-10" />
-              <div
-                className="absolute bottom-0 left-0 right-0 bg-amber-500/40 transition-all duration-75"
-                style={{ height: `${leftProgress}%` }}
-              />
-            </div>
-          </div>
-
-          <div className="flex flex-col items-center gap-1">
-            <span className="text-[10px] text-gray-300 font-bold uppercase">Front Cannon [Space]</span>
-            <div className="relative w-14 h-14 rounded-lg bg-gray-800 border-2 border-pirate-gold flex items-center justify-center overflow-hidden">
-              <Flame className="w-7 h-7 text-pirate-gold z-10" />
-              <div
-                className="absolute bottom-0 left-0 right-0 bg-pirate-gold/40 transition-all duration-75"
-                style={{ height: `${frontProgress}%` }}
-              />
-            </div>
-          </div>
-
-          <div className="flex flex-col items-center gap-1">
-            <span className="text-[10px] text-gray-300 font-bold uppercase">Right Cannon [E]</span>
-            <div className="relative w-12 h-12 rounded-lg bg-gray-800 border border-gray-600 flex items-center justify-center overflow-hidden">
-              <Crosshair className="w-6 h-6 text-amber-400 z-10" />
-              <div
-                className="absolute bottom-0 left-0 right-0 bg-amber-500/40 transition-all duration-75"
-                style={{ height: `${rightProgress}%` }}
-              />
-            </div>
-          </div>
-        </div>
+      <div aria-live="polite" role="status" className="sr-only" data-testid="hud-live-region">
+        Score {score}. Health {Math.max(0, playerHp)} of {playerMaxHp}. {formatTime(timeRemaining)} remaining.
       </div>
     </div>
   );

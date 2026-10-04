@@ -22,6 +22,7 @@ export interface GameEngineCallbacks {
   }) => void;
   onGameOver: (result: { score: number; duration: number; endReason: EndReason }) => void;
   onAutoPause?: () => void;
+  onLoadProgress?: (progress: number) => void;
 }
 
 export class GameEngine {
@@ -34,9 +35,12 @@ export class GameEngine {
 
   public isRunning: boolean = false;
   public isPaused: boolean = false;
+  private isDestroyed: boolean = false;
+  private isInitialized: boolean = false;
 
   private stage: Container;
   private gameLayer: Container;
+  private screenWater!: TilingSprite;
 
   private player!: Player;
   private islands: Island[] = [];
@@ -48,6 +52,7 @@ export class GameEngine {
   private score: number = 0;
   private timeRemaining: number = 0;
   private elapsedTime: number = 0;
+  private shotsFired: number = 0;
 
   private inputState = {
     thrust: 0,
@@ -81,9 +86,16 @@ export class GameEngine {
       backgroundColor: 0x1b4d6e,
     });
 
+    this.isInitialized = true;
+    if (this.isDestroyed) {
+      this.app.destroy(true, { children: true, texture: false });
+      return;
+    }
+
     containerElement.appendChild(this.app.canvas);
 
-    await TextureManager.getInstance().preloadAssets();
+    await TextureManager.getInstance().preloadAssets(this.callbacks.onLoadProgress);
+    if (this.isDestroyed) return;
 
     this.stage.addChild(this.gameLayer);
 
@@ -100,16 +112,61 @@ export class GameEngine {
 
     this.setupInputs();
     this.handleResize();
+    this.app.renderer.on('resize', this.handleResize, this);
 
     SoundManager.getInstance().startAmbience();
     SoundManager.getInstance().play('game_start');
 
     this.app.ticker.add(this.update, this);
     this.isRunning = true;
+
+    // Test instrumentation hooks (read-only state + deterministic controls).
+    if (typeof window !== 'undefined') {
+      (window as unknown as Record<string, unknown>).__pirateEngine = this;
+    }
+  }
+
+  /** Test/debug: snapshot of internal simulation state. */
+  public debugGetState() {
+    return {
+      score: this.score,
+      timeRemaining: this.timeRemaining,
+      elapsedTime: this.elapsedTime,
+      isRunning: this.isRunning,
+      isPaused: this.isPaused,
+      player: this.player
+        ? {
+            x: this.player.x,
+            y: this.player.y,
+            rotation: this.player.angle,
+            hp: this.player.currentHealth,
+            frontCooldown: this.player.frontCooldownTimer,
+            leftCooldown: this.player.leftBroadsideCooldownTimer,
+            rightCooldown: this.player.rightBroadsideCooldownTimer,
+          }
+        : null,
+      enemies: this.enemies.map((e) => ({ x: e.x, y: e.y, type: e.type, hp: e.currentHealth })),
+      projectileCount: this.projectiles.length,
+      shotsFired: this.shotsFired,
+    };
+  }
+
+  /** Test/debug: fast-forward the match clock. */
+  public debugSetTimeRemaining(seconds: number): void {
+    this.timeRemaining = Math.max(0, seconds);
   }
 
   private setupBackground(): void {
     const waterTex = TextureManager.getInstance().getTexture('water_tile');
+
+    this.screenWater = new TilingSprite({
+      texture: waterTex,
+      width: this.app.screen.width,
+      height: this.app.screen.height,
+    });
+    this.screenWater.alpha = 0.9;
+    this.stage.addChildAt(this.screenWater, 0);
+
     const tilingSprite = new TilingSprite({
       texture: waterTex,
       width: this.arenaWidth,
@@ -120,12 +177,19 @@ export class GameEngine {
   }
 
   private setupIslands(): void {
-    const island1 = new Island(320, 240, 85);
-    const island2 = new Island(960, 480, 95);
+    const islandLayout = [
+      { x: 200, y: 166, radius: 148 },
+      { x: 1052, y: 174, radius: 136 },
+      { x: 224, y: 555, radius: 128 },
+      { x: 1046, y: 544, radius: 150 },
+      { x: 642, y: 190, radius: 26 },
+      { x: 660, y: 536, radius: 30 },
+    ];
 
-    this.islands.push(island1, island2);
-    this.gameLayer.addChild(island1.container);
-    this.gameLayer.addChild(island2.container);
+    this.islands = islandLayout.map(({ x, y, radius }, variant) =>
+      new Island(x, y, radius, undefined, variant)
+    );
+    this.islands.forEach(island => this.gameLayer.addChild(island.container));
   }
 
   private setupInputs(): void {
@@ -134,7 +198,6 @@ export class GameEngine {
 
       const code = e.code;
       if (code === 'KeyW' || code === 'ArrowUp') this.inputState.thrust = 1;
-      if (code === 'KeyS' || code === 'ArrowDown') this.inputState.thrust = -1;
       if (code === 'KeyA' || code === 'ArrowLeft') this.inputState.turn = -1;
       if (code === 'KeyD' || code === 'ArrowRight') this.inputState.turn = 1;
 
@@ -152,7 +215,6 @@ export class GameEngine {
     this.boundKeyUp = (e: KeyboardEvent) => {
       const code = e.code;
       if ((code === 'KeyW' || code === 'ArrowUp') && this.inputState.thrust === 1) this.inputState.thrust = 0;
-      if ((code === 'KeyS' || code === 'ArrowDown') && this.inputState.thrust === -1) this.inputState.thrust = 0;
       if ((code === 'KeyA' || code === 'ArrowLeft') && this.inputState.turn === -1) this.inputState.turn = 0;
       if ((code === 'KeyD' || code === 'ArrowRight') && this.inputState.turn === 1) this.inputState.turn = 0;
     };
@@ -196,6 +258,7 @@ export class GameEngine {
     if (!this.isRunning || this.isPaused) return;
     const projs = this.player.fireFront();
     if (projs) {
+      this.shotsFired += projs.length;
       projs.forEach((p) => {
         this.projectiles.push(p);
         this.gameLayer.addChild(p.container);
@@ -207,6 +270,7 @@ export class GameEngine {
     if (!this.isRunning || this.isPaused) return;
     const projs = this.player.fireLeftBroadside();
     if (projs) {
+      this.shotsFired += projs.length;
       projs.forEach((p) => {
         this.projectiles.push(p);
         this.gameLayer.addChild(p.container);
@@ -218,6 +282,7 @@ export class GameEngine {
     if (!this.isRunning || this.isPaused) return;
     const projs = this.player.fireRightBroadside();
     if (projs) {
+      this.shotsFired += projs.length;
       projs.forEach((p) => {
         this.projectiles.push(p);
         this.gameLayer.addChild(p.container);
@@ -228,8 +293,13 @@ export class GameEngine {
   private handleResize(): void {
     if (!this.app || !this.app.renderer) return;
 
-    const screenWidth = this.app.renderer.width / (window.devicePixelRatio || 1);
-    const screenHeight = this.app.renderer.height / (window.devicePixelRatio || 1);
+    const screenWidth = this.app.screen.width;
+    const screenHeight = this.app.screen.height;
+
+    if (this.screenWater) {
+      this.screenWater.width = screenWidth;
+      this.screenWater.height = screenHeight;
+    }
 
     const scaleX = screenWidth / this.arenaWidth;
     const scaleY = screenHeight / this.arenaHeight;
@@ -276,6 +346,7 @@ export class GameEngine {
       this.arenaWidth,
       this.arenaHeight,
       islandPolys,
+      this.enemies,
       (enemy) => {
         this.enemies.push(enemy);
         this.gameLayer.addChild(enemy.container);
@@ -292,6 +363,12 @@ export class GameEngine {
         islandPolys
       );
 
+      if (enemy.readyToRemove) {
+        enemy.destroy();
+        this.enemies.splice(i, 1);
+        continue;
+      }
+
       if (shooterProj) {
         this.projectiles.push(shooterProj);
         this.gameLayer.addChild(shooterProj.container);
@@ -305,8 +382,7 @@ export class GameEngine {
           SoundManager.getInstance().play('explosion');
           SoundManager.getInstance().play('ship_collision');
 
-          enemy.destroy();
-          this.enemies.splice(i, 1);
+          enemy.beginDeath();
 
           if (this.player.currentHealth <= 0) {
             this.endGame('PLAYER_DIED');
@@ -366,8 +442,6 @@ export class GameEngine {
               SoundManager.getInstance().play('score_point');
               SoundManager.getInstance().play('explosion');
               this.effectManager.createExplosion(enemy.x, enemy.y, 1.0);
-              enemy.destroy();
-              this.enemies.splice(eIdx, 1);
             }
 
             proj.destroy();
@@ -424,6 +498,8 @@ export class GameEngine {
   }
 
   public destroy(): void {
+    if (this.isDestroyed) return;
+    this.isDestroyed = true;
     this.isRunning = false;
 
     window.removeEventListener('keydown', this.boundKeyDown);
@@ -444,7 +520,8 @@ export class GameEngine {
     this.islands = [];
     this.projectiles = [];
 
-    if (this.app) {
+    if (this.isInitialized) {
+      this.app.renderer.off('resize', this.handleResize, this);
       this.app.ticker.remove(this.update, this);
       this.app.destroy(true, { children: true, texture: false });
     }

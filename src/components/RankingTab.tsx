@@ -1,9 +1,10 @@
 import React from 'react';
 import { RankingEntry, PaginatedResponse } from '../types/game';
-import { Trophy, ChevronLeft, ChevronRight, RefreshCw, AlertCircle } from 'lucide-react';
+import { Star, RefreshCw, AlertCircle } from 'lucide-react';
 
 interface RankingTabProps {
   data?: PaginatedResponse<RankingEntry>;
+  playerId: string;
   isLoading: boolean;
   isError: boolean;
   error?: Error | null;
@@ -14,6 +15,7 @@ interface RankingTabProps {
 
 export const RankingTab: React.FC<RankingTabProps> = ({
   data,
+  playerId,
   isLoading,
   isError,
   error,
@@ -21,122 +23,125 @@ export const RankingTab: React.FC<RankingTabProps> = ({
   onPageChange,
   onRefetch,
 }) => {
+  const formatPlayedDate = (date: string): string => {
+    const playedAt = new Date(date);
+    if (Number.isNaN(playedAt.getTime())) return '--';
+
+    const dateLabel = playedAt
+      .toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })
+      .replace('.', '')
+      .toUpperCase();
+    const timeLabel = playedAt.toLocaleTimeString('en-GB', {
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false,
+    });
+
+    return `${dateLabel} · ${timeLabel}`;
+  };
+
+  const roundButtonStyle = {
+    backgroundImage: `url('/assets/png/default/ui/controls/button_round_normal.png')`,
+    backgroundSize: '100% 100%',
+    backgroundRepeat: 'no-repeat',
+    width: 44,
+    height: 44,
+  } as const;
+
   return (
-    <div className="space-y-6" data-testid="tab-ranking">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <Trophy className="w-7 h-7 text-pirate-gold" />
-          <h2 className="text-xl font-black text-white tracking-wider uppercase">
-            GLOBAL RANKING
-          </h2>
-        </div>
-        <button
-          onClick={onRefetch}
-          className="p-2 bg-gray-800 hover:bg-gray-700 text-pirate-gold rounded-xl transition-colors border border-gray-700 focus:outline-none focus:ring-2 focus:ring-pirate-gold"
-          title="Refresh Leaderboard"
-          aria-label="Refresh Leaderboard"
-          data-testid="btn-refresh-ranking"
-        >
-          <RefreshCw className={`w-5 h-5 ${isLoading ? 'animate-spin' : ''}`} />
-        </button>
-      </div>
+    <div className="flex min-h-0 flex-1 flex-col space-y-4" data-testid="tab-ranking">
 
       {isLoading ? (
         <div className="py-16 text-center space-y-3" data-testid="ranking-loading">
-          <RefreshCw className="w-8 h-8 text-pirate-gold animate-spin mx-auto" />
-          <p className="text-gray-400 text-sm">Loading global leaderboard...</p>
+          <RefreshCw className="w-8 h-8 text-[#e8c35c] animate-spin mx-auto" />
+          <p className="text-slate-400 text-sm">Loading global leaderboard...</p>
         </div>
       ) : isError ? (
-        <div className="bg-red-950/60 border border-red-500/80 p-6 rounded-2xl text-center space-y-3" data-testid="ranking-error">
+        <div className="bg-[#141d2e]/80 border border-red-500/60 p-6 rounded-xl text-center space-y-3" data-testid="ranking-error">
           <AlertCircle className="w-8 h-8 text-red-400 mx-auto" />
           <p className="text-red-200 font-semibold text-sm">
             Failed to load ranking data: {error?.message || 'Network error'}
           </p>
           <button
             onClick={onRefetch}
-            className="px-4 py-2 bg-red-800 hover:bg-red-700 text-white rounded-xl text-xs font-bold transition-colors"
+            className="px-4 py-2 bg-red-800 hover:bg-red-700 text-white rounded-lg text-xs font-bold transition-colors"
           >
             Try Again
           </button>
         </div>
       ) : !data || data.data.length === 0 ? (
-        <div className="py-16 text-center bg-gray-800/40 rounded-2xl border border-gray-800" data-testid="ranking-empty">
-          <p className="text-gray-400 font-medium">No ranking records found.</p>
+        <div className="py-16 text-center" data-testid="ranking-empty">
+          <p className="text-slate-400 font-medium">No ranking records found.</p>
         </div>
       ) : (
-        <div className="space-y-4">
-          <div className="overflow-x-auto rounded-2xl border border-gray-800">
-            <table className="w-full text-left text-sm text-gray-300">
-              <thead className="bg-gray-800/90 uppercase text-xs text-pirate-gold font-bold tracking-wider">
-                <tr>
-                  <th className="px-4 py-3">Rank</th>
-                  <th className="px-4 py-3">Captain</th>
-                  <th className="px-4 py-3 text-right">Score</th>
-                  <th className="px-4 py-3 text-right">Duration</th>
-                  <th className="px-4 py-3 text-right">Date</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-800/60 bg-gray-900/60 font-medium">
-                {data.data.map((entry) => (
-                  <tr
-                    key={`${entry.rank}-${entry.playerId}-${entry.score}`}
-                    className="hover:bg-gray-800/50 transition-colors"
-                  >
-                    <td className="px-4 py-3 font-black">
-                      <span
-                        className={`inline-flex items-center justify-center w-7 h-7 rounded-full text-xs ${
-                          entry.rank === 1
-                            ? 'bg-amber-500 text-gray-900 font-extrabold'
-                            : entry.rank === 2
-                            ? 'bg-gray-300 text-gray-900 font-extrabold'
-                            : entry.rank === 3
-                            ? 'bg-amber-700 text-white font-extrabold'
-                            : 'text-gray-400'
-                        }`}
-                      >
-                        #{entry.rank}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 font-bold text-white">{entry.playerName}</td>
-                    <td className="px-4 py-3 text-right font-black text-pirate-gold">
-                      {entry.score} pts
-                    </td>
-                    <td className="px-4 py-3 text-right text-gray-400">{entry.duration}s</td>
-                    <td className="px-4 py-3 text-right text-xs text-gray-500">
-                      {new Date(entry.date).toLocaleDateString()}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+        <>
+          <div className="min-h-0 flex-1">
+            <div className="grid grid-cols-[0.6fr_1.8fr_1fr_1fr] px-5 pb-2 text-[11px] font-bold uppercase tracking-[0.15em] text-slate-400">
+              <span>Rank</span>
+              <span>Captain</span>
+              <span className="text-center">Points</span>
+              <span className="text-right">Played</span>
+            </div>
 
-          <div className="flex items-center justify-between pt-2">
-            <span className="text-xs text-gray-400 font-medium">
-              Page {data.page} of {data.totalPages || 1} ({data.total} entries)
-            </span>
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => onPageChange(page - 1)}
-                disabled={page <= 1}
-                className="p-2 bg-gray-800 hover:bg-gray-700 disabled:opacity-40 text-pirate-gold rounded-xl transition-colors border border-gray-700 focus:outline-none focus:ring-2 focus:ring-pirate-gold"
-                aria-label="Previous Page"
-                data-testid="btn-ranking-prev"
-              >
-                <ChevronLeft className="w-5 h-5" />
-              </button>
-              <button
-                onClick={() => onPageChange(page + 1)}
-                disabled={page >= data.totalPages}
-                className="p-2 bg-gray-800 hover:bg-gray-700 disabled:opacity-40 text-pirate-gold rounded-xl transition-colors border border-gray-700 focus:outline-none focus:ring-2 focus:ring-pirate-gold"
-                aria-label="Next Page"
-                data-testid="btn-ranking-next"
-              >
-                <ChevronRight className="w-5 h-5" />
-              </button>
+            <div className="space-y-2">
+              {data.data.map((entry) => {
+                const isCurrentPlayer = entry.playerId === playerId;
+
+                return (
+                  <div
+                    key={`${entry.rank}-${entry.playerId}-${entry.score}`}
+                    className={`grid grid-cols-[0.6fr_1.8fr_1fr_1fr] items-center rounded-lg px-5 py-3 text-sm font-medium ${
+                      isCurrentPlayer ? 'bg-[#4a4a34]/70' : 'bg-[#141d2e]/80'
+                    }`}
+                  >
+                    <span className="font-black text-[#e8c35c]">
+                      {String(entry.rank).padStart(2, '0')}
+                    </span>
+                    <span className="flex items-center gap-2 font-bold text-slate-100">
+                      {entry.rank === 1 && <Star className="h-4 w-4 fill-amber-400 text-amber-400 shrink-0" />}
+                      {entry.playerName}
+                      {isCurrentPlayer && (
+                        <span className="rounded border border-amber-300/40 bg-amber-300/10 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-amber-200">
+                          You
+                        </span>
+                      )}
+                    </span>
+                    <span className="text-center font-black text-[#e8c35c]">{entry.score}</span>
+                    <span className="text-right text-xs text-slate-300">
+                      {formatPlayedDate(entry.date)}
+                    </span>
+                  </div>
+                );
+              })}
             </div>
           </div>
-        </div>
+
+          <div className="flex items-center justify-center gap-4 pt-2">
+            <button
+              onClick={() => onPageChange(page - 1)}
+              disabled={page <= 1}
+              className="flex items-center justify-center border-0 bg-transparent disabled:opacity-40 focus:outline-none"
+              style={roundButtonStyle}
+              aria-label="Previous Page"
+              data-testid="btn-ranking-prev"
+            >
+              <img src="/assets/png/default/ui/controls/icon_turn_left.png" alt="previous" className="w-5 h-5 object-contain" />
+            </button>
+            <span className="text-[11px] font-black uppercase tracking-[0.15em] text-[#f1d8a0]">
+              Page {data.page} of {data.totalPages || 1}
+            </span>
+            <button
+              onClick={() => onPageChange(page + 1)}
+              disabled={page >= data.totalPages}
+              className="flex items-center justify-center border-0 bg-transparent disabled:opacity-40 focus:outline-none"
+              style={roundButtonStyle}
+              aria-label="Next Page"
+              data-testid="btn-ranking-next"
+            >
+              <img src="/assets/png/default/ui/controls/icon_turn_right.png" alt="next" className="w-5 h-5 object-contain" />
+            </button>
+          </div>
+        </>
       )}
     </div>
   );

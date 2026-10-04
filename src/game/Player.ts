@@ -20,7 +20,6 @@ export class Player {
   public rightBroadsideCooldownTimer: number = 0;
 
   private sprite: Sprite;
-  private fireSprite: Sprite;
   private healthBar: HealthBar;
   private config: GameConfig;
 
@@ -39,16 +38,8 @@ export class Player {
     this.sprite.anchor.set(0.5);
     this.sprite.width = 44;
     this.sprite.height = 64;
+    this.sprite.rotation = Math.PI;
     this.container.addChild(this.sprite);
-
-    const fireTex = TextureManager.getInstance().getTexture('fire_effect');
-    this.fireSprite = new Sprite(fireTex);
-    this.fireSprite.anchor.set(0.5);
-    this.fireSprite.width = 24;
-    this.fireSprite.height = 24;
-    this.fireSprite.position.set(0, 10);
-    this.fireSprite.visible = false;
-    this.container.addChild(this.fireSprite);
 
     this.healthBar = new HealthBar(48, 6);
     this.healthBar.container.position.set(0, -42);
@@ -105,7 +96,6 @@ export class Player {
 
     this.container.position.set(this.x, this.y);
     SoundManager.getInstance().updateSailingSound(inputs.thrust !== 0);
-    this.fireSprite.visible = this.currentHealth < this.maxHealth * 0.4;
   }
 
   public fireFront(): Projectile[] | null {
@@ -141,16 +131,13 @@ export class Player {
     const leftAngle = this.angle - Math.PI;
     const projectList: Projectile[] = [];
 
-    const offsets = [-15, 0, 15];
-    for (const offset of offsets) {
-      const px = this.x - Math.cos(this.angle) * offset - Math.sin(this.angle) * 12;
-      const py = this.y - Math.sin(this.angle) * offset + Math.cos(this.angle) * 12;
-
+    const angleOffsets = [-0.12, 0, 0.12];
+    for (const spread of angleOffsets) {
       projectList.push(
         new Projectile(
-          px,
-          py,
-          leftAngle,
+          this.x,
+          this.y,
+          leftAngle + spread,
           this.config.broadsideSpeed,
           this.config.broadsideDamage,
           this.config.broadsideRange,
@@ -171,16 +158,13 @@ export class Player {
     const rightAngle = this.angle;
     const projectList: Projectile[] = [];
 
-    const offsets = [-15, 0, 15];
-    for (const offset of offsets) {
-      const px = this.x - Math.cos(this.angle) * offset + Math.sin(this.angle) * 12;
-      const py = this.y - Math.sin(this.angle) * offset - Math.cos(this.angle) * 12;
-
+    const angleOffsets = [-0.12, 0, 0.12];
+    for (const spread of angleOffsets) {
       projectList.push(
         new Projectile(
-          px,
-          py,
-          rightAngle,
+          this.x,
+          this.y,
+          rightAngle + spread,
           this.config.broadsideSpeed,
           this.config.broadsideDamage,
           this.config.broadsideRange,
@@ -200,6 +184,15 @@ export class Player {
 
   private updateHealthBar(): void {
     this.healthBar.update(this.currentHealth, this.maxHealth, true);
+
+    const healthRatio = this.currentHealth / this.maxHealth;
+    const texKey = healthRatio <= 0.3
+      ? 'player_ship_critical'
+      : healthRatio <= 0.65
+        ? 'player_ship_damaged'
+        : 'player_ship';
+    this.sprite.texture = TextureManager.getInstance().getTexture(texKey);
+    this.sprite.tint = healthRatio <= 0.3 ? 0xb29a84 : healthRatio <= 0.65 ? 0xe2d1bd : 0xffffff;
   }
 
   public getCircle(): Circle {

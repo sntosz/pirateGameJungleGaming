@@ -7,33 +7,29 @@ test.describe('Options & Navigation', () => {
     await page.reload();
   });
 
-  test('should navigate to options, adjust parameters, validate and persist after refresh', async ({ page }) => {
+  test('should adjust options with steppers and persist on return to menu', async ({ page }) => {
     await expect(page.getByTestId('screen-main-menu')).toBeVisible();
 
     await page.getByTestId('btn-options').click();
     await expect(page.getByTestId('screen-options')).toBeVisible();
 
-    const nameInput = page.getByTestId('input-player-name');
-    await nameInput.fill('Captain Blackbeard');
+    for (let step = 0; step < 6; step++) {
+      await page.getByTestId('btn-session-increase').click();
+    }
+    for (let step = 0; step < 4; step++) {
+      await page.getByTestId('btn-spawn-increase').click();
+    }
 
-    const sessionTimeInput = page.getByTestId('input-session-time');
-    await sessionTimeInput.fill('120');
-
-    const spawnIntervalInput = page.getByTestId('input-spawn-interval');
-    await spawnIntervalInput.fill('5');
-
-    await page.getByTestId('btn-save-options').click();
-    await expect(page.getByText('SAVED!')).toBeVisible();
+    await expect(page.getByTestId('val-session-time')).toHaveText('120 s');
+    await expect(page.getByTestId('val-spawn-interval')).toHaveText('5 s');
 
     await page.getByTestId('btn-options-back').click();
-    await expect(page.getByText('Captain Blackbeard')).toBeVisible();
+    await expect(page.getByTestId('screen-main-menu')).toBeVisible();
 
     await page.reload();
-    await expect(page.getByText('Captain Blackbeard')).toBeVisible();
-
     await page.getByTestId('btn-options').click();
-    await expect(page.getByTestId('val-session-time')).toHaveText('120s');
-    await expect(page.getByTestId('val-spawn-interval')).toHaveText('5s');
+    await expect(page.getByTestId('val-session-time')).toHaveText('120 s');
+    await expect(page.getByTestId('val-spawn-interval')).toHaveText('5 s');
   });
 
   test('should view ranking and match history tabs with pagination', async ({ page }) => {
@@ -41,10 +37,14 @@ test.describe('Options & Navigation', () => {
 
     await page.getByTestId('tab-btn-ranking').click();
     await expect(page.getByTestId('tab-ranking')).toBeVisible();
-    await expect(page.getByText('GLOBAL RANKING')).toBeVisible();
+    await expect(page.getByText('Blackbeard')).toBeVisible();
+    await expect(page.getByText('Page 1 of 3')).toBeVisible();
+
+    await page.getByTestId('btn-ranking-next').click();
+    await expect(page.getByText('Page 2 of 3')).toBeVisible();
 
     await page.getByTestId('tab-btn-history').click();
     await expect(page.getByTestId('tab-match-history')).toBeVisible();
-    await expect(page.getByText('MATCH HISTORY')).toBeVisible();
+    await expect(page.getByText(/recent battles/i)).toBeVisible();
   });
 });

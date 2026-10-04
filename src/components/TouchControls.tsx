@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ArrowUp, ArrowDown, ArrowLeft, ArrowRight, Flame, ChevronLeft, ChevronRight } from 'lucide-react';
+import { useFitScale } from '../hooks/useFitScale';
 
 interface TouchControlsProps {
   onMoveChange: (thrust: number, turn: number) => void;
@@ -7,6 +7,15 @@ interface TouchControlsProps {
   onLeftFire: () => void;
   onRightFire: () => void;
 }
+
+const roundButton = (size: number) =>
+  ({
+    backgroundImage: `url('/assets/png/default/ui/controls/button_round_normal.png')`,
+    backgroundSize: '100% 100%',
+    backgroundRepeat: 'no-repeat',
+    width: size,
+    height: size,
+  }) as const;
 
 export const TouchControls: React.FC<TouchControlsProps> = ({
   onMoveChange,
@@ -16,6 +25,7 @@ export const TouchControls: React.FC<TouchControlsProps> = ({
 }) => {
   const [thrust, setThrust] = useState(0);
   const [turn, setTurn] = useState(0);
+  const scale = useFitScale(520, 110);
 
   const updateMove = (newThrust: number, newTurn: number) => {
     setThrust(newThrust);
@@ -24,81 +34,92 @@ export const TouchControls: React.FC<TouchControlsProps> = ({
   };
 
   return (
-    <div className="absolute inset-x-0 bottom-4 px-6 pointer-events-none flex justify-between items-end z-20 md:hidden select-none">
-      <div className="pointer-events-auto grid grid-cols-3 gap-1 bg-gray-900/80 p-2 rounded-full border border-pirate-gold/40 shadow-xl backdrop-blur">
-        <div />
-        <button
-          onTouchStart={() => updateMove(1, turn)}
-          onTouchEnd={() => updateMove(0, turn)}
-          className={`w-12 h-12 rounded-full flex items-center justify-center border border-gray-600 ${
-            thrust === 1 ? 'bg-pirate-gold text-gray-900' : 'bg-gray-800 text-pirate-gold'
-          }`}
-          aria-label="Thrust Forward"
-        >
-          <ArrowUp className="w-6 h-6" />
-        </button>
-        <div />
-
+    <div
+      className="absolute inset-x-0 bottom-4 px-6 pointer-events-none flex justify-between items-end z-20 select-none touch-none"
+      style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
+      onContextMenu={(e) => e.preventDefault()}
+    >
+      <div
+        className="pointer-events-auto flex items-end gap-2"
+        style={{ transform: `scale(${scale})`, transformOrigin: 'bottom left' }}
+      >
         <button
           onTouchStart={() => updateMove(thrust, -1)}
           onTouchEnd={() => updateMove(thrust, 0)}
-          className={`w-12 h-12 rounded-full flex items-center justify-center border border-gray-600 ${
-            turn === -1 ? 'bg-pirate-gold text-gray-900' : 'bg-gray-800 text-pirate-gold'
-          }`}
+          onTouchCancel={() => updateMove(thrust, 0)}
+          onMouseDown={() => updateMove(thrust, -1)}
+          onMouseUp={() => updateMove(thrust, 0)}
+          onMouseLeave={() => turn === -1 && updateMove(thrust, 0)}
+          className="flex items-center justify-center border-0 bg-transparent p-0 transition-transform active:scale-95"
+          style={roundButton(56)}
           aria-label="Turn Left"
         >
-          <ArrowLeft className="w-6 h-6" />
+          <img src="/assets/png/default/ui/controls/icon_turn_left.png" alt="" className="w-6 h-6 object-contain" />
         </button>
 
         <button
-          onTouchStart={() => updateMove(-1, turn)}
+          onTouchStart={() => updateMove(1, turn)}
           onTouchEnd={() => updateMove(0, turn)}
-          className={`w-12 h-12 rounded-full flex items-center justify-center border border-gray-600 ${
-            thrust === -1 ? 'bg-pirate-gold text-gray-900' : 'bg-gray-800 text-pirate-gold'
+          onTouchCancel={() => updateMove(0, turn)}
+          onMouseDown={() => updateMove(1, turn)}
+          onMouseUp={() => updateMove(0, turn)}
+          onMouseLeave={() => thrust === 1 && updateMove(0, turn)}
+          className={`flex items-center justify-center border-0 bg-transparent p-0 transition-transform active:scale-95 ${
+            thrust === 1 ? 'brightness-125' : ''
           }`}
-          aria-label="Reverse"
+          style={roundButton(64)}
+          aria-label="Thrust Forward"
         >
-          <ArrowDown className="w-6 h-6" />
+          <img src="/assets/png/default/ui/controls/icon_forward.png" alt="" className="w-7 h-7 object-contain" />
         </button>
 
         <button
           onTouchStart={() => updateMove(thrust, 1)}
           onTouchEnd={() => updateMove(thrust, 0)}
-          className={`w-12 h-12 rounded-full flex items-center justify-center border border-gray-600 ${
-            turn === 1 ? 'bg-pirate-gold text-gray-900' : 'bg-gray-800 text-pirate-gold'
-          }`}
+          onTouchCancel={() => updateMove(thrust, 0)}
+          onMouseDown={() => updateMove(thrust, 1)}
+          onMouseUp={() => updateMove(thrust, 0)}
+          onMouseLeave={() => turn === 1 && updateMove(thrust, 0)}
+          className="flex items-center justify-center border-0 bg-transparent p-0 transition-transform active:scale-95"
+          style={roundButton(56)}
           aria-label="Turn Right"
         >
-          <ArrowRight className="w-6 h-6" />
+          <img src="/assets/png/default/ui/controls/icon_turn_right.png" alt="" className="w-6 h-6 object-contain" />
         </button>
       </div>
 
-      <div className="pointer-events-auto flex items-end gap-2 bg-gray-900/80 p-2 rounded-2xl border border-pirate-gold/40 backdrop-blur shadow-xl">
+      <div
+        className="pointer-events-auto flex items-end gap-2"
+        style={{ transform: `scale(${scale})`, transformOrigin: 'bottom right' }}
+      >
         <button
           onTouchStart={onLeftFire}
-          className="w-14 h-14 rounded-full bg-amber-700 hover:bg-amber-600 text-white flex flex-col items-center justify-center border border-amber-400 active:scale-95 transition-transform"
+          onMouseDown={onLeftFire}
+          className="flex items-center justify-center border-0 bg-transparent p-0 transition-transform active:scale-95"
+          style={roundButton(56)}
           aria-label="Fire Left Broadside"
         >
-          <ChevronLeft className="w-6 h-6" />
-          <span className="text-[9px] font-bold">LEFT</span>
+          <img src="/assets/png/default/ui/controls/icon_fire_left.png" alt="" className="w-6 h-6 object-contain" />
         </button>
 
         <button
           onTouchStart={onFrontFire}
-          className="w-16 h-16 rounded-full bg-pirate-red hover:bg-red-600 text-white flex flex-col items-center justify-center border-2 border-pirate-gold active:scale-95 transition-transform shadow-lg"
+          onMouseDown={onFrontFire}
+          className="flex items-center justify-center border-0 bg-transparent p-0 transition-transform active:scale-95"
+          style={roundButton(64)}
           aria-label="Fire Front Cannon"
         >
-          <Flame className="w-8 h-8 text-pirate-gold" />
-          <span className="text-[10px] font-bold">FRONT</span>
+          <img src="/assets/png/default/ui/controls/icon_fire_front.png" alt="" className="w-7 h-7 object-contain" />
         </button>
 
         <button
           onTouchStart={onRightFire}
-          className="w-14 h-14 rounded-full bg-amber-700 hover:bg-amber-600 text-white flex flex-col items-center justify-center border border-amber-400 active:scale-95 transition-transform"
+          onMouseDown={onRightFire}
+          className="flex items-center justify-center border-0 bg-transparent p-0 transition-transform active:scale-95"
+          style={roundButton(56)}
           aria-label="Fire Right Broadside"
         >
-          <ChevronRight className="w-6 h-6" />
-          <span className="text-[9px] font-bold">RIGHT</span>
+          <img src="/assets/png/default/ui/controls/icon_fire_right.png" alt="" className="w-6 h-6 object-contain" />
         </button>
       </div>
     </div>

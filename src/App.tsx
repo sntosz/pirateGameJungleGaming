@@ -19,10 +19,27 @@ import { HUD } from './components/HUD';
 import { TouchControls } from './components/TouchControls';
 import { PauseModal } from './components/PauseModal';
 import { ResultScreen } from './components/ResultScreen';
+import { RotateOverlay } from './components/RotateOverlay';
 import { GameEngine } from './game/GameEngine';
+
+const lockLandscapeOrientation = async () => {
+  try {
+    if (document.documentElement.requestFullscreen) {
+      await document.documentElement.requestFullscreen();
+    }
+    const orientation = screen.orientation as ScreenOrientation & {
+      lock?: (o: string) => Promise<void>;
+    };
+    await orientation.lock?.('landscape');
+  } catch {
+    // Orientation lock not supported (e.g. iOS) — RotateOverlay covers that case.
+  }
+};
 
 export const App: React.FC = () => {
   const [gameState, setGameState] = useState<GameState>('MENU');
+  const [session, setSession] = useState(0);
+  const [showPauseOptions, setShowPauseOptions] = useState(false);
   const [config, setConfig] = useState<GameConfig>(loadGameConfig());
   const [playerName, setPlayerName] = useState<string>(loadPlayerName());
   const [playerId] = useState<string>('p-user-local');
@@ -46,7 +63,10 @@ export const App: React.FC = () => {
 
   const engineRef = React.useRef<GameEngine | null>(null);
 
-  const rankingQuery = useRanking(rankingPage);
+  const rankingQuery = useRanking(rankingPage, {
+    sessionTime: config.sessionTime,
+    enemySpawnInterval: config.enemySpawnInterval,
+  });
   const historyQuery = useMatchHistory(playerId, historyPage);
   const registerMutation = useRegisterMatch();
   useOfflineSync();
@@ -66,6 +86,8 @@ export const App: React.FC = () => {
   };
 
   const handleStartGame = () => {
+    lockLandscapeOrientation();
+    setSession(s => s + 1);
     setGameState('PLAYING');
   };
 
@@ -76,10 +98,22 @@ export const App: React.FC = () => {
     setGameState('PAUSED');
   };
 
+  React.useEffect(() => {
+    const mediaQuery = window.matchMedia('(orientation: portrait)');
+    const onOrientationChange = () => {
+      if (mediaQuery.matches && gameState === 'PLAYING') {
+        handlePause();
+      }
+    };
+    mediaQuery.addEventListener('change', onOrientationChange);
+    return () => mediaQuery.removeEventListener('change', onOrientationChange);
+  }, [gameState]);
+
   const handleResume = () => {
     if (engineRef.current) {
       engineRef.current.resume();
     }
+    setShowPauseOptions(false);
     setGameState('PLAYING');
   };
 
@@ -88,6 +122,7 @@ export const App: React.FC = () => {
       engineRef.current.destroy();
       engineRef.current = null;
     }
+    setShowPauseOptions(false);
     setGameState('MENU');
   };
 
@@ -138,10 +173,15 @@ export const App: React.FC = () => {
   };
 
   return (
-    <div className="w-full h-full relative overflow-hidden bg-gray-950 font-sans">
+    <div className="w-full h-[100%] relative overflow-hidden bg-gray-950 font-sans">
+      <RotateOverlay />
+
       {gameState === 'MENU' && (
         <MainMenu
           playerName={playerName}
+          playerId={playerId}
+          sessionTime={config.sessionTime}
+          enemySpawnInterval={config.enemySpawnInterval}
           onStartGame={handleStartGame}
           onOpenOptions={() => setGameState('PAUSED')}
           rankingData={rankingQuery.data}
@@ -172,9 +212,10 @@ export const App: React.FC = () => {
         />
       )}
 
-      {(gameState === 'PLAYING' || (gameState === 'PAUSED' && engineRef.current)) && (
+      {(gameState === 'PLAYING' || ((gameState === 'PAUSED' || gameState === 'GAMEOVER') && engineRef.current)) && (
         <div className="w-full h-full relative">
           <GameCanvas
+            key={session}
             config={config}
             callbacks={{
               onStatsUpdate: setHudStats,
@@ -186,6 +227,8 @@ export const App: React.FC = () => {
             }}
           />
 
+          {gameState !== 'GAMEOVER' && (
+          <>
           <HUD
             score={hudStats.score}
             playerHp={hudStats.playerHp}
@@ -213,9 +256,24 @@ export const App: React.FC = () => {
               if (engineRef.current) engineRef.current.triggerRightBroadside();
             }}
           />
+          </>
+          )}
 
-          {gameState === 'PAUSED' && (
-            <PauseModal onResume={handleResume} onAbandon={handleAbandonMatch} />
+          {gameState === 'PAUSED' && !showPauseOptions && (
+            <PauseModal
+              onResume={handleResume}
+              onAbandon={handleAbandonMatch}
+              onOptions={() => setShowPauseOptions(true)}
+            />
+          )}
+
+          {gameState === 'PAUSED' && showPauseOptions && (
+            <OptionsScreen
+              config={config}
+              playerName={playerName}
+              onSave={handleSaveOptions}
+              onBack={() => setShowPauseOptions(false)}
+            />
           )}
         </div>
       )}
@@ -225,6 +283,7 @@ export const App: React.FC = () => {
           result={lastResult}
           onPlayAgain={() => {
             engineRef.current = null;
+            setSession(s => s + 1);
             setGameState('PLAYING');
           }}
           onMainMenu={() => {

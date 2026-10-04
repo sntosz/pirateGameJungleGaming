@@ -61,7 +61,7 @@ export class EffectManager {
         const progress = effect.lifetime / effect.maxLifetime;
         g.clear();
         g.stroke({ width: 2, color: 0xffffff, alpha: 1 - progress });
-        g.drawCircle(0, 0, 8 + progress * 16);
+        g.circle(0, 0, 8 + progress * 16);
         return effect.lifetime < effect.maxLifetime;
       },
     };

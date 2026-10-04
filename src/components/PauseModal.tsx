@@ -1,45 +1,82 @@
 import React from 'react';
-import { Play, Home } from 'lucide-react';
+import { useFitScale } from '../hooks/useFitScale';
+import { useFocusTrap } from '../hooks/useFocusTrap';
 
 interface PauseModalProps {
   onResume: () => void;
   onAbandon: () => void;
+  onOptions?: () => void;
 }
 
-export const PauseModal: React.FC<PauseModalProps> = ({ onResume, onAbandon }) => {
+export const PauseModal: React.FC<PauseModalProps> = ({ onResume, onAbandon, onOptions }) => {
+  const scale = useFitScale(572, 420);
+  const dialogRef = useFocusTrap<HTMLDivElement>();
+
+  const primaryButtonStyle = {
+    backgroundImage: `url('/assets/png/default/ui/menu/button_primary_normal.png')`,
+    backgroundSize: '100% 100%',
+    backgroundRepeat: 'no-repeat',
+    width: 280,
+    height: 66,
+  } as const;
+
   return (
     <div
-      className="fixed inset-0 bg-black/75 backdrop-blur-md z-50 flex items-center justify-center p-4"
+      ref={dialogRef}
+      className="fixed inset-0 z-50 flex items-center justify-center p-4"
       role="dialog"
       aria-modal="true"
       aria-label="Game Paused"
       data-testid="modal-pause"
     >
-      <div className="bg-gray-900 border-2 border-pirate-gold rounded-2xl p-8 max-w-md w-full shadow-2xl text-center space-y-6">
-        <h2 className="text-3xl font-black text-pirate-gold tracking-widest uppercase">
-          GAME PAUSED
+      <div
+        className="relative flex flex-col items-center justify-center text-center"
+        style={{
+          backgroundImage: `url('/assets/png/default/ui/menu/frame.png')`,
+          backgroundSize: '100% 100%',
+          backgroundRepeat: 'no-repeat',
+          width: 540,
+          aspectRatio: '1570 / 829',
+          padding: '6% 10%',
+          transform: `scale(${scale})`,
+          transformOrigin: 'center center',
+        }}
+      >
+        <h2 className="text-3xl sm:text-4xl font-black uppercase tracking-[0.08em] text-[#f7dfaa] drop-shadow-md">
+          Paused
         </h2>
-        <p className="text-gray-300 text-sm">
-          Simulation and timer suspended. Click Resume to continue fighting!
+        <p className="mt-2 text-[13px] sm:text-sm font-medium text-[#f1d8a0] opacity-90">
+          Ready when you are.
         </p>
 
-        <div className="flex flex-col gap-3 pt-2">
+        <div className="mt-7 flex flex-col items-center gap-2.5">
           <button
             onClick={onResume}
-            className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3.5 px-6 rounded-xl border border-emerald-400 shadow-lg flex items-center justify-center gap-2 transition-all focus:outline-none focus:ring-2 focus:ring-emerald-400"
+            className="flex items-center justify-center border-0 bg-transparent px-4 text-[15px] font-black uppercase tracking-[0.12em] text-[#1d2d41] shadow-none transition-transform hover:scale-[1.03] focus:outline-none focus:ring-2 focus:ring-pirate-gold"
+            style={primaryButtonStyle}
             data-testid="btn-resume"
           >
-            <Play className="w-5 h-5 fill-current" />
-            <span>RESUME MATCH</span>
+            <span>Resume</span>
           </button>
+
+          {onOptions && (
+            <button
+              onClick={onOptions}
+              className="flex items-center justify-center border-0 bg-transparent px-4 text-[15px] font-black uppercase tracking-[0.12em] text-[#1d2d41] shadow-none transition-transform hover:scale-[1.03] focus:outline-none focus:ring-2 focus:ring-pirate-gold"
+              style={primaryButtonStyle}
+              data-testid="btn-pause-options"
+            >
+              <span>Options</span>
+            </button>
+          )}
 
           <button
             onClick={onAbandon}
-            className="w-full bg-gray-800 hover:bg-red-950/80 text-gray-300 hover:text-red-300 font-semibold py-3 px-6 rounded-xl border border-gray-700 hover:border-red-500 transition-all flex items-center justify-center gap-2 focus:outline-none focus:ring-2 focus:ring-red-400"
+            className="flex items-center justify-center border-0 bg-transparent px-4 text-[15px] font-black uppercase tracking-[0.12em] text-[#1d2d41] shadow-none transition-transform hover:scale-[1.03] focus:outline-none focus:ring-2 focus:ring-pirate-gold"
+            style={primaryButtonStyle}
             data-testid="btn-abandon"
           >
-            <Home className="w-5 h-5" />
-            <span>ABANDON MATCH</span>
+            <span>Main Menu</span>
           </button>
         </div>
       </div>

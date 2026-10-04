@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { MatchResult, RankingEntry, PaginatedResponse } from '../types/game';
+import { MatchResult, RankingEntry, PaginatedResponse, GameConfig } from '../types/game';
 
 export const apiClient = axios.create({
   baseURL: '/api',
@@ -10,9 +10,19 @@ export const apiClient = axios.create({
 });
 
 export const apiService = {
-  getRanking: async (page: number = 1, pageSize: number = 10): Promise<PaginatedResponse<RankingEntry>> => {
+  getRanking: async (
+    page: number = 1,
+    pageSize: number = 10,
+    config?: Pick<GameConfig, 'sessionTime' | 'enemySpawnInterval'>
+  ): Promise<PaginatedResponse<RankingEntry>> => {
     const res = await apiClient.get<PaginatedResponse<RankingEntry>>('/ranking', {
-      params: { page, pageSize },
+      params: {
+        page,
+        pageSize,
+        ...(config
+          ? { sessionTime: config.sessionTime, enemySpawnInterval: config.enemySpawnInterval }
+          : {}),
+      },
     });
     return res.data;
   },

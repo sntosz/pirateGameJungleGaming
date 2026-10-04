@@ -1,18 +1,22 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiService } from '../services/api';
-import { MatchResult } from '../types/game';
+import { MatchResult, GameConfig } from '../types/game';
 import { loadPendingMatches, savePendingMatches } from '../services/storage';
 import { useEffect, useState } from 'react';
 
 export const QUERY_KEYS = {
-  ranking: (page: number) => ['ranking', page],
+  ranking: (page: number, sessionTime?: number, spawnInterval?: number) =>
+    ['ranking', page, sessionTime, spawnInterval],
   history: (playerId: string, page: number) => ['history', playerId, page],
 };
 
-export function useRanking(page: number = 1) {
+export function useRanking(
+  page: number = 1,
+  config?: Pick<GameConfig, 'sessionTime' | 'enemySpawnInterval'>
+) {
   return useQuery({
-    queryKey: QUERY_KEYS.ranking(page),
-    queryFn: () => apiService.getRanking(page, 10),
+    queryKey: QUERY_KEYS.ranking(page, config?.sessionTime, config?.enemySpawnInterval),
+    queryFn: () => apiService.getRanking(page, 5, config),
     staleTime: 5000,
   });
 }
@@ -20,7 +24,7 @@ export function useRanking(page: number = 1) {
 export function useMatchHistory(playerId: string, page: number = 1) {
   return useQuery({
     queryKey: QUERY_KEYS.history(playerId, page),
-    queryFn: () => apiService.getMatchHistory(playerId, page, 10),
+    queryFn: () => apiService.getMatchHistory(playerId, page, 5),
     staleTime: 5000,
   });
 }
